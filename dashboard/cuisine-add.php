@@ -1,4 +1,5 @@
 <?php
+    include '../libraries/database.php';
     include '../libraries/form.php';
     include '../libraries/view.php';
 
@@ -26,8 +27,17 @@
         // and stop all processing of this page.
         if (!$errors)
         {
-            header('Location:cuisines.php');
-            return;
+            // Get the next primary key from the table insertion.
+            $idCheck = addCuisine($name);
+
+            // Only redirect if the primary key is 1 and above.
+            if ($idCheck > 0)
+            {
+                header('Location:cuisines.php');
+                return;
+            }
+
+            $formErrors['database'] = true;
         }
     }
 
@@ -39,6 +49,10 @@ Add Cuisine
 <?= endSection(); ?>
 
 <?= startSection('content'); ?>
+<?php if (isset($formErrors['database'])): ?>
+    <div class="alert alert-danger text-center mb-3">This record could not be added.</div>
+<?php endif; ?>
+
 <form action="cuisine-add.php" method="post">
     <div class="form-group row">
         <label for="input-name" class="col-md-2 col-form-label">Name</label>

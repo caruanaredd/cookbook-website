@@ -52,7 +52,7 @@
 
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="cuisines.php" class="nav-link">
                                 <i class="material-icons">flag</i>
                                 Cuisines
                             </a>
