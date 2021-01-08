@@ -97,6 +97,42 @@
     }
 
     /**
+     * Edits a cuisine.
+     * @param int $id The cuisine ID.
+     * @param string $name The cuisine name.
+     */
+    function editCuisine($id, $name)
+    {
+        // 1. Connect to the database.
+        $link = connect();
+
+        // 2. Generate a query and prepare it for data insertion
+        // using the mysqli library; this takes care of any
+        // potential hacking (SQL Injection).
+        $stmt = mysqli_prepare($link, "
+            UPDATE cuisine
+            SET name = ?
+            WHERE cuisineID = ?
+        ");
+
+        // 3. Bind the parameters to ensure that strings and numbers
+        // will be escaped to avoid errors in PHP code.
+        mysqli_stmt_bind_param($stmt, 'si',
+            $name,          # string
+            $id             # integer
+        );
+
+        // 4. Execute the statement.
+        mysqli_stmt_execute($stmt);
+
+        // 5. Disconnect from the database.
+        disconnect($link);
+
+        // 6. If the query worked, we should have 0 or 1 updated rows.
+        return mysqli_stmt_affected_rows($stmt) != -1;
+    }
+
+    /**
      * Retrieves all cuisines from the table.
      */
     function getAllCuisines()
@@ -142,5 +178,83 @@
 
         // 5. Return the result or a false if the query failed.
         return mysqli_fetch_assoc($result) ?: false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Levels Table Management
+    // -------------------------------------------------------------------------
+    /**
+     * Retrieves all levels from the table.
+     */
+    function getAllLevels()
+    {
+        // 1. Connect to the database.
+        $link = connect();
+        
+        // 2. Process a query and store the result in a variable.
+        $result = mysqli_query($link, "
+        SELECT *
+        FROM levels
+        ");
+        
+        // 3. Close the connection.
+        disconnect($link);
+        
+        // 4. Return the result or a false if the query failed.
+        return $result ?: false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Recipe Table Management
+    // -------------------------------------------------------------------------
+        /**
+     * Adds the basic recipe information.
+     * @param $title The recipe title.
+     * @param $description The recipe description.
+     * @param $prepTime The preparation time in minutes.
+     * @param $cookTime The cook time in minutes.
+     * @param $additionalTime The additional time in minutes.
+     * @param $yields The yield value.
+     * @param $levelID The level ID.
+     * @param $cuisineID The cuisine ID.
+     */
+    function addRecipe($title, $description, $prepTime, $cookTime, $additionalTime, $yields, $levelID, $cuisineID)
+    {
+        // 1. Connect to the database.
+        $link = connect();
+
+        // 2. Prepare a query using the mysqli library
+        // to take care of any potential hacking.
+        $stmt = mysqli_prepare($link, "
+            INSERT INTO recipe
+                (title, description, prepTime, cookTime, additionalTime, yields, levelID, cuisineID, creationDate)
+            VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $time = time();
+
+        // 3. Binding parameters will ensure any characters
+        // will be escaped without us putting the work.
+        mysqli_stmt_bind_param($stmt, 'ssiiiiiii',
+            $title,             # string
+            $description,       # string
+            $prepTime,          # integer
+            $cookTime,          # integer
+            $additionalTime,    # integer
+            $yields,            # integer
+            $levelID,           # integer
+            $cuisineID,         # integer
+            $time               # integer
+        );
+
+        // 4. Execute the statement.
+        mysqli_stmt_execute($stmt);
+
+        // 5. Disconnect from the database.
+        disconnect($link);
+
+        // 6. If the query worked, we should have a new primary key ID.
+        return mysqli_stmt_insert_id($stmt);
     }
 ?>

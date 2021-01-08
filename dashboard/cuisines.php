@@ -42,7 +42,7 @@ Cuisines
                 <th scope="row"><?= $count ?></th>
                 <td><?= $cuisine['name'] ?></td>
                 <td class="text-right">
-                    <a href="#" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="cuisine-edit.php?id=<?= $cuisine['cuisineID']; ?>" class="btn btn-sm btn-primary">Edit</a>
                     <a href="cuisine-delete.php?id=<?= $cuisine['cuisineID']; ?>" class="btn btn-sm btn-danger">Delete</a>
                 </td>
             </tr>
