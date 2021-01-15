@@ -27,7 +27,7 @@
         
         <ul class="navbar-nav ml-auto px-3">
             <li class="nav-item text-nowrap reduced">
-                <a href="#" class="nav-link">Sign out</a>
+                (logged in as <?= $_COOKIE['firstName']; ?> <?= $_COOKIE['lastName']; ?>) <a href="../logout.php" class="nav-link">Sign out</a>
             </li>
         </ul>
     </nav>

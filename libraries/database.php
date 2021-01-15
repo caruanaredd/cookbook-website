@@ -1,4 +1,7 @@
 <?php
+    // The email encryption key for our database.
+    define('AES_ENCRYPT_KEY', 'canttouchthis');
+
     // -------------------------------------------------------------------------
     // Database Connection
     // -------------------------------------------------------------------------
@@ -207,7 +210,7 @@
     // -------------------------------------------------------------------------
     // Recipe Table Management
     // -------------------------------------------------------------------------
-        /**
+    /**
      * Adds the basic recipe information.
      * @param $title The recipe title.
      * @param $description The recipe description.
@@ -256,5 +259,176 @@
 
         // 6. If the query worked, we should have a new primary key ID.
         return mysqli_stmt_insert_id($stmt);
+    }
+
+    // -------------------------------------------------------------------------
+    // User Management
+    // -------------------------------------------------------------------------
+    /**
+     * Registers a user.
+     * @param $username The username.
+     * @param $email The email address.
+     * @param $password The unfiltered password.
+     * @param $saltLength The length of the salt string.
+     */
+    function registerUser($username, $email, $password, $saltLength = 8)
+    {
+        // 1. Connect to the database.
+        $link = connect();
+
+        // 2. Process the information we need to protect the user data.
+        // Generate a salt string.
+        $salt = substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($saltLength / strlen($x)))), 1, $saltLength);
+
+        // Encrypt the password.
+        $password = password_hash($password.$salt, CRYPT_BLOWFISH);
+
+        // Convert the constant/integer values to a variable.
+        $key = AES_ENCRYPT_KEY;
+        $groupID = 16;
+
+        // 3. Generate a query and prepare it for data insertion
+        // using the mysqli library; this takes care of any
+        // potential hacking (SQL Injection).
+        $stmt = mysqli_prepare($link, "
+            INSERT INTO users
+                (username, email, password, salt, groupID)
+            VALUES
+                (?, HEX(AES_ENCRYPT(?, ?)), ?, ?, ?)
+        ");
+
+        // 4. Bind the parameters to ensure that strings and numbers
+        // will be escaped to avoid errors in PHP code.
+        mysqli_stmt_bind_param($stmt, 'sssssi',
+            $username,              # string
+            $email,                 # string
+            $key,                   # string
+            $password,              # string
+            $salt,                  # string
+            $groupID                # integer
+        );
+
+        // 5. Execute the statement.
+        mysqli_stmt_execute($stmt);
+
+        // 6. Disconnect from the database.
+        disconnect($link);
+
+        // 7. If the query worked, we should have a new primary key ID.
+        return mysqli_stmt_insert_id($stmt);
+    }
+
+    /**
+     * Registers the user's meta information.
+     * @param $userID The user ID.
+     * @param $name The user's name.
+     * @param $surname The user's surname.
+     */
+    function registerUserMeta($userID, $name, $surname)
+    {
+        // 1. Connect to the database.
+        $link = connect();
+
+        // 2. Generate a query and prepare it for data insertion
+        // using the mysqli library; this takes care of any
+        // potential hacking (SQL Injection).
+        $stmt = mysqli_prepare($link, "
+            INSERT INTO userMeta
+                (userID, firstName, lastName)
+            VALUES
+                (?, ?, ?)
+        ");
+
+        // 3. Bind the parameters to ensure that strings and numbers
+        // will be escaped to avoid errors in PHP code.
+        mysqli_stmt_bind_param($stmt, 'iss',
+            $userID,        # integer
+            $name,          # string
+            $surname        # string
+        );
+
+        // 4. Execute the statement.
+        mysqli_stmt_execute($stmt);
+
+        // 5. Disconnect from the database.
+        disconnect($link);
+
+        // 6. If the query worked, we should have a new affected row.
+        return mysqli_stmt_affected_rows($stmt) > 0;
+    }
+
+    /**
+     * Attempts to log a user into the system.
+     * @param $login The username or email.
+     * @param $password The unfiltered password.
+     */
+    function login($login, $password)
+    {
+        // 1. Try to get the user's password information.
+        $user = getUserCredentials($login);
+
+        // 2. If the user was not found, we can stop here.
+        if (!$user) return false;
+
+        // 3. Try to validate the password.
+        if (!password_verify($password.$user['salt'], $user['password'])) return false;
+
+        // 4. Return the user data for login purposes.
+        return getUserDetails($user['userID']);
+    }
+
+    /**
+     * Retrieves the ID and password information for a user's login details.
+     * @param $login The username or registered email.
+     */
+    function getUserCredentials($login)
+    {
+        // 1. Connect to the database.
+        $link = connect();
+
+        // 2. Protect the variable to avoid any SQL Injection.
+        $login      = mysqli_real_escape_string($link, $login);
+        $key        = mysqli_real_escape_string($link, AES_ENCRYPT_KEY);
+
+        // 3. Process a query and store the result in a variable.
+        $result = mysqli_query($link, "
+            SELECT userID, salt, password
+            FROM users
+            WHERE username = '{$login}' OR email = HEX(AES_ENCRYPT('{$login}', '{$key}'))
+        ");
+
+        // 4. Close the connection.
+        disconnect($link);
+
+        // 5. Return the result or a false if the query failed.
+        return mysqli_fetch_assoc($result) ?: false;
+    }
+
+    /**
+     * Returns the user's readable information.
+     * @param $userID The user's ID in the table.
+     */
+    function getUserDetails($userID)
+    {
+        // 1. Connect to the database.
+        $link = connect();
+
+        // 2. Protect the variable to avoid any SQL Injection.
+        $userID      = mysqli_real_escape_string($link, $userID);
+
+        // 3. Process a query and store the result in a variable.
+        $result = mysqli_query($link, "
+            SELECT a.userID, a.username, a.groupID, b.firstName, b.lastName
+            FROM users a
+            LEFT JOIN userMeta b
+                ON a.userID = b.userID
+            WHERE a.userID = {$userID}
+        ");
+
+        // 4. Close the connection.
+        disconnect($link);
+
+        // 5. Return the result or a false if the query failed.
+        return mysqli_fetch_assoc($result) ?: false;
     }
 ?>

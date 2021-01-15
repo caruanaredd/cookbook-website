@@ -1,6 +1,19 @@
 <?php
     include '../libraries/database.php';
     include '../libraries/view.php';
+    include '../libraries/user.php';
+
+    // Ensures that a user is logged in.
+    if (!isLoggedIn())
+    {
+        header('Location:../login.php');
+    }
+
+    // Ensures that a user has permission to view this page.
+    if (!hasPermission($_COOKIE['groupID'], 16))
+    {
+        die("You don't have permission to view this page.");
+    }
     
     extend('template.php');
 ?>
