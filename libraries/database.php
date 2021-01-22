@@ -183,6 +183,36 @@
         return mysqli_fetch_assoc($result) ?: false;
     }
 
+    function searchCuisines($keywords)
+    {
+        // 1. Connect to the database.
+        $link = connect();
+
+        // 2. Protect the variable to avoid any SQL Injection.
+        // split the keywords into individuals using the space
+        // character as a delimiter.
+        $keywords = explode(' ', $keywords);
+        foreach ($keywords as &$keyword)
+        {
+            $keyword = mysqli_real_escape_string($link, $keyword);
+            $keyword = "name LIKE '%{$keyword}%'";
+        }
+        $keywords = implode(' OR ', $keywords);
+
+        // 3. Process a query and store the result in a variable.
+        $result = mysqli_query($link, "
+            SELECT *
+            FROM cuisine
+            WHERE {$keywords}
+        ");
+
+        // 4. Close the connection.
+        disconnect($link);
+
+        // 5. Return the result or a false if the query failed.
+        return $result ?: false;
+    }
+
     // -------------------------------------------------------------------------
     // Levels Table Management
     // -------------------------------------------------------------------------
@@ -261,6 +291,24 @@
         return mysqli_stmt_insert_id($stmt);
     }
 
+    function getAllRecipes()
+    {
+        // 1. Connect to the database.
+        $link = connect();
+        
+        // 2. Process a query and store the result in a variable.
+        $result = mysqli_query($link, "
+            SELECT *
+            FROM recipe
+        ");
+        
+        // 3. Close the connection.
+        disconnect($link);
+        
+        // 4. Return the result or a false if the query failed.
+        return $result ?: false;
+    }
+    
     // -------------------------------------------------------------------------
     // User Management
     // -------------------------------------------------------------------------

@@ -67,3 +67,12 @@
         $path .= "/{$name}.{$ext}";
         return move_uploaded_file($file['tmp_name'], $path);
     }
+
+    function getImage($path)
+    {
+        // ex: $path -> uploads/recipe/13
+        $images = glob("{$path}.*");
+        
+        if (count($images) > 0) return $images[0];
+        return 'uploads/not-found.png';
+    }
